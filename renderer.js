@@ -81,6 +81,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   initBottomResize();
 
   setStatus('Bereit. Ordner öffnen oder Dateien auswählen.');
+
+  // Button Event Listeners (contextIsolation fix - onclick in HTML doesn't work)
+  const btnFolder = document.getElementById('btn-open-folder');
+  const btnFiles = document.getElementById('btn-open-files');
+  const btnExport = document.getElementById('btn-export');
+  const btnExportAll = document.getElementById('btn-export-all');
+  const btnClear = document.getElementById('btn-clear');
+
+  if (btnFolder) btnFolder.addEventListener('click', () => handleOpenFolder());
+  if (btnFiles) btnFiles.addEventListener('click', () => handleOpenFiles());
+  if (btnExport) btnExport.addEventListener('click', () => handleExportExcel());
+  if (btnExportAll) btnExportAll.addEventListener('click', () => handleExportAll());
+  if (btnClear) btnClear.addEventListener('click', () => handleClear());
 });
 
 // ============================================================
