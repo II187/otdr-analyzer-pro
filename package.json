@@ -1,0 +1,54 @@
+{
+  "name": "otdr-analyzer-pro",
+  "version": "1.0.0",
+  "description": "Professionelle OTDR SOR-Datei Analysesoftware – LWL-Techniker Schweiz GmbH",
+  "main": "main.js",
+  "author": {
+    "name": "LWL-Techniker Schweiz GmbH",
+    "email": "info@lwl-techniker.ch"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ii187/otdr-analyzer-pro"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "ch.lwl-techniker.otdr-analyzer",
+    "productName": "OTDR Analyzer Pro",
+    "copyright": "Copyright © 2025 LWL-Techniker Schweiz GmbH",
+    "directories": { "output": "dist" },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "OTDR Analyzer Pro"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/electron-builder/**",
+      "!.git/**"
+    ]
+  }
+}
