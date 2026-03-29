@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob:;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTDR Analyzer Pro</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <div id="topbar">
+    <div class="logo-wrap">
+      <img id="company-logo" src="logo.jpg" alt="LWL-Techniker" onerror="this.style.display='none'">
+      <div>
+        <div class="app-title">OTDR Analyzer Pro</div>
+        <div class="app-subtitle">LWL-Techniker Schweiz GmbH</div>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="project-info" id="project-info-bar">
+      <div class="info-item">
+        <span class="info-label">Kabel</span>
+        <span class="info-value" id="info-cable">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Fasern</span>
+        <span class="info-value" id="info-fibers">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Standort A</span>
+        <span class="info-value" id="info-loca">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Standort B</span>
+        <span class="info-value" id="info-locb">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Techniker</span>
+        <span class="info-value" id="info-tech">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Datum</span>
+        <span class="info-value" id="info-date">—</span>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn btn-secondary btn-sm" onclick="openSettings()" data-tip="Einstellungen & Grenzwerte">⚙ Einstellungen</button>
+    </div>
+  </div>
+
+  <!-- ============ TOOLBAR ============ -->
+  <div id="toolbar">
+    <div class="toolbar-group">
+      <button class="btn btn-secondary" id="btn-open-folder" onclick="handleOpenFolder()">
+        📂 Ordner öffnen
+      </button>
+      <button class="btn btn-secondary" id="btn-open-files" onclick="handleOpenFiles()">
+        📄 Dateien öffnen
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="toolbar-group">
+      <button class="btn btn-success" id="btn-export" onclick="handleExportExcel()" disabled>
+        📊 Excel exportieren
+      </button>
+      <button class="btn btn-orange" id="btn-export-all" onclick="handleExportAll()" disabled>
+        📦 Alle exportieren
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="toolbar-group">
+      <button class="btn btn-secondary btn-sm" id="btn-clear" onclick="handleClear()" disabled>🗑 Leeren</button>
+    </div>
+
+    <!-- Zusammenfassung rechts -->
+    <div class="summary-badge">
+      <span id="badge-total" class="badge badge-total" style="display:none">
+        <span id="total-count">0</span> Messungen
+      </span>
+      <span id="badge-ok" class="badge badge-ok" style="display:none">
+        ✓ <span id="ok-count">0</span> OK
+      </span>
+      <span id="badge-nok" class="badge badge-nok" style="display:none">
+        ✗ <span id="nok-count">0</span> NOK
+      </span>
+    </div>
+  </div>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <div id="main-content">
+
+    <!-- ---- Sidebar ---- -->
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <span class="sidebar-title">Faserliste</span>
+        <span id="fiber-count-label" style="font-size:11px;color:var(--text-muted)"></span>
+      </div>
+
+      <div id="sidebar-search">
+        <input type="text" id="search-input" placeholder="Faser suchen..." oninput="filterFibers(this.value)">
+      </div>
+
+      <div id="fiber-list">
+        <div class="sidebar-empty" id="sidebar-empty-state">
+          <div class="empty-icon">🔌</div>
+          <div class="empty-text">Keine Dateien geladen.<br>Ordner oder SOR-Dateien öffnen.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Content Area ---- -->
+    <div id="content-area">
+
+      <!-- Chart Area -->
+      <div id="chart-area">
+        <div id="chart-header">
+          <div id="chart-title">Kein Faser ausgewählt</div>
+          <div id="chart-controls">
+            <div class="toggle-chip" id="toggle-1310" onclick="toggleWavelength(1310)" data-tip="1310 nm ein/aus">
+              <span class="dot"></span>1310 nm
+            </div>
+            <div class="toggle-chip" id="toggle-1550" onclick="toggleWavelength(1550)" data-tip="1550 nm ein/aus">
+              <span class="dot"></span>1550 nm
+            </div>
+            <div class="toolbar-sep" style="height:20px;margin:0 4px;"></div>
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="resetZoom()" data-tip="Zoom zurücksetzen">🔍</button>
+          </div>
+        </div>
+
+        <!-- Messinfo Cards -->
+        <div id="meas-info"></div>
+
+        <!-- Chart -->
+        <div id="chart-wrapper">
+          <canvas id="main-chart"></canvas>
+          <div id="chart-empty">
+            <div class="empty-icon">📈</div>
+            <div class="empty-text">Faser in der Liste auswählen,<br>um die Trace anzuzeigen.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resize Handle -->
+      <div id="bottom-resize"></div>
+
+      <!-- Bottom Panel: Events Table -->
+      <div id="bottom-panel">
+        <div id="bottom-header">
+          <span class="panel-title">Ereignisse</span>
+          <span id="events-count-label" style="font-size:11px;color:var(--text-muted)"></span>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <div id="dir-legend" style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text-muted);">
+              <span style="color:var(--accent)">■</span> A→B &nbsp;
+              <span style="color:var(--accent-red)">■</span> B→A
+            </div>
+          </div>
+        </div>
+        <div id="events-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nr.</th>
+                <th>Richtung</th>
+                <th>λ (nm)</th>
+                <th>Position (m)</th>
+                <th style="text-align:left">Typ</th>
+                <th>Verlust (dB)</th>
+                <th>Reflexion (dB)</th>
+                <th>Steigung (dB/km)</th>
+                <th>Kommentar</th>
+              </tr>
+            </thead>
+            <tbody id="events-tbody">
+              <tr>
+                <td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;">Keine Ereignisse</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+
+  </div><!-- /main-content -->
+
+  <!-- ============ STATUS BAR ============ -->
+  <div id="statusbar">
+    <div class="status-item" id="status-files">
+      <span>📁</span>
+      <span id="status-file-count">0 Dateien</span>
+    </div>
+    <div class="toolbar-sep" style="height:16px;"></div>
+    <div class="status-msg" id="status-msg">Bereit.</div>
+    <div class="toolbar-sep" style="height:16px;"></div>
+    <div class="status-item" id="status-version">v1.0.0</div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ============ PROGRESS OVERLAY ============ -->
+<div id="progress-overlay">
+  <div id="progress-box">
+    <div class="progress-title">📡 OTDR-Dateien werden geladen...</div>
+    <div class="progress-sub" id="progress-sub">Initialisierung...</div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
+    </div>
+    <div class="progress-stats">
+      <span id="progress-current">0 / 0</span>
+      <span id="progress-pct">0%</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS DIALOG ============ -->
+<div id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div id="settings-box">
+    <div class="dialog-header">
+      <h3>⚙ Einstellungen</h3>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="dialog-body">
+
+      <!-- Grenzwerte -->
+      <div class="form-section-title">Grenzwerte (Gesamtverlust max. zulässig)</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Grenzwert 1310 nm</label>
+          <input type="number" id="set-limit-1310" step="0.01" min="0" max="20" placeholder="1.04">
+          <span class="field-unit">Einheit: dB</span>
+        </div>
+        <div class="form-field">
+          <label>Grenzwert 1550 nm</label>
+          <input type="number" id="set-limit-1550" step="0.01" min="0" max="20" placeholder="0.67">
+          <span class="field-unit">Einheit: dB</span>
+        </div>
+      </div>
+
+      <!-- Planwerte -->
+      <div class="form-section-title">Planwerte (Faserdämpfung)</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Planwert 1310 nm</label>
+          <input type="number" id="set-plan-1310" step="0.01" min="0" max="5" placeholder="0.36">
+          <span class="field-unit">Einheit: dB/km</span>
+        </div>
+        <div class="form-field">
+          <label>Planwert 1550 nm</label>
+          <input type="number" id="set-plan-1550" step="0.01" min="0" max="5" placeholder="0.22">
+          <span class="field-unit">Einheit: dB/km</span>
+        </div>
+      </div>
+
+      <!-- Projektinfo -->
+      <div class="form-section-title">Projektinformationen (für Excel-Export)</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Kabelbezeichnung</label>
+          <input type="text" id="set-cable-id" placeholder="z.B. ZUI.A.95">
+        </div>
+        <div class="form-field">
+          <label>Projektname</label>
+          <input type="text" id="set-project" placeholder="z.B. Universität Zürich">
+        </div>
+        <div class="form-field">
+          <label>Standort A</label>
+          <input type="text" id="set-loca" placeholder="z.B. Technopark">
+        </div>
+        <div class="form-field">
+          <label>Standort B</label>
+          <input type="text" id="set-locb" placeholder="z.B. HG Hauptgebäude">
+        </div>
+        <div class="form-field">
+          <label>Messtechniker</label>
+          <input type="text" id="set-tech" placeholder="Name des Technikers">
+        </div>
+        <div class="form-field">
+          <label>Messdatum</label>
+          <input type="date" id="set-date">
+        </div>
+      </div>
+
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-secondary" onclick="closeSettings()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveSettings()">✓ Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js from CDN (falls offline nicht verfügbar: lokal installiert) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+
+<script src="renderer.js"></script>
+</body>
+</html>
